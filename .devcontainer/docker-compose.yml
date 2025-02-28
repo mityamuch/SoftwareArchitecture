@@ -1,0 +1,165 @@
+version: '3.3'
+
+services:
+
+  structurizr:
+    image: structurizr/lite
+    container_name: strl
+    ports:
+      - 9999:8080
+    volumes:
+        - ../structurizr:/usr/local/structurizr
+    networks:
+      - my_network
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    networks:
+      - my_network
+    volumes:
+      - ..:/workspace
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8080:8080"
+    depends_on:
+      - db
+      - mongodb
+      - cache
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db/postgres
+
+  db:
+    image: postgres:14
+    container_name: db
+    networks:
+      - my_network
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=stud
+      - POSTGRES_PASSWORD=stud
+      - POSTGRES_DB=archdb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:5.0
+    container_name: mongodb
+    restart: on-failure
+    networks:
+      - my_network
+    volumes:
+      - mongodbdata:/data/db
+      - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+      - ../mongo:/opt/mongo
+    ports:
+      - '27017:27017'
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+
+  cache:
+    container_name: cache
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning 
+    networks:
+      - my_network
+
+  grafana-01:
+    image: grafana/grafana
+    container_name: grafana-01
+    ports:
+      - 3000:3000
+    networks:
+      - my_network
+  
+  prometheus-01:
+    image: prom/prometheus
+    container_name: prometheus-01
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - my_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - my_network
+
+  kafka1:
+      image: 'bitnami/kafka:latest'
+      container_name: kafka1
+      ports:
+      #   - "2181:2181"
+         - "9092:9092"
+      #   - "9093:9093"
+      environment:
+        KAFKA_ENABLE_KRAFT: "yes"
+        KAFKA_CFG_PROCESS_ROLES: "broker,controller"
+        KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+        KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+        KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+        KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka1:9092"
+        KAFKA_BROKER_ID: 1
+        KAFKA_CFG_NODE_ID: 1
+        KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093"
+        ALLOW_PLAINTEXT_LISTENER: "yes"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_KRAFT_CLUSTER_ID: "dh6khitPSDGZSBOjNeTC_g"
+      volumes:
+        - kafka_volume1:/bitnami/kafka
+      networks:
+        - my_network
+    
+  kafka2:
+      image: 'bitnami/kafka:latest'
+      container_name: kafka2
+      # ports:
+      #   - "2181:2181"
+      #   - "9092:9092"
+      #   - "9093:9093"
+      environment:
+        KAFKA_ENABLE_KRAFT: "yes"
+        KAFKA_CFG_PROCESS_ROLES: "broker,controller"
+        KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+        KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+        KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+        KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka2:9092"
+        KAFKA_BROKER_ID: 2
+        KAFKA_CFG_NODE_ID: 2
+        KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093"
+        ALLOW_PLAINTEXT_LISTENER: "yes"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_KRAFT_CLUSTER_ID: "dh6khitPSDGZSBOjNeTC_g"
+      volumes:
+        - kafka_volume2:/bitnami/kafka
+      networks:
+        - my_network
+
+  kafka-ui:
+      image: provectuslabs/kafka-ui:v0.4.0
+      ports:
+        - "8888:8080"
+      environment:
+        KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9092"
+        KAFKA_CLUSTERS_0_NAME: "kraft"
+      networks:
+        - my_network
+
+networks:
+  my_network:
+volumes:
+  postgres-data:
+  mongodbdata:
+  kafka_volume1:
+  kafka_volume2:
