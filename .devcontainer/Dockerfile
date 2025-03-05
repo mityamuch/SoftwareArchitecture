@@ -29,7 +29,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем остальные файлы проекта
 COPY . .
-COPY ./.devcontainer/bee-c4-dsl-extension.vsix /tmp/
 
 # Открываем порт 8000 для FastAPI
 EXPOSE 8000

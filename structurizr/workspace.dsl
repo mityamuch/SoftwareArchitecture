@@ -1,162 +1,142 @@
 workspace {
-    name "имя продукта"
-    description "описание продукта"
-
-    # включаем режим с иерархической системой идентификаторов
+    name "Budgeting System"
     !identifiers hierarchical
 
     model {
+        user = person "Пользователь"
 
-        u1 = person "Студент"
-        u2 = person "Преподаватель"
+        budgetSystem = softwareSystem "Система Бюджетирования" {
+            description "Приложение для управления планируемыми доходами и расходами."\
 
-        s1 = softwareSystem "BigBlueButton"
-        s2 = softwareSystem "LMS" {
-            -> s1 "Запуск конференции в bigBlueButton"
-
-            db = container "Database" {
-                technology "PostgreSQL 14"
+            userService = container "User Service" {
+                technology "Python / FastAPI"
+                description "Сервис для управления пользователями."
             }
 
-            subject = container "Subject" {
-                technology "Java Spring"
-                -> db "сохранение и получение информации о курсе" "JDBC"
+            incomeService = container "Income Service" {
+                technology "Python / FastAPI"
+                description "Сервис для управления доходами."
             }
 
-            content = container "Content" {
-                technology "Java Spring"
-                -> db "сохранение и получение информации о контенте курса" "JDBC"
+            expenseService = container "Expense Service" {
+                technology "Python / FastAPI"
+                description "Сервис для управления расходами."
             }
 
-            be = container "API Gateway" {
-                -> subject "Создание/удаление курса" "HTTPS"
-                -> content "Создание/удаление контента" "HTTPS"
-                -> s1 "Запустить конференцию" "HTTPS"
-                technology "Java Spring Cloud Gateway"
-
-                c1 = component "Single Sign On" {
-
-                }
-                
-                c2 = component "Logging Adpater" {
-
-                }
+            budgetCalculationService = container "Budget Calculation Service" {
+                technology "Python / FastAPI"
+                description "Сервис для расчета динамики бюджета."
             }
-            fe = container "Single Page Application" {
-                technology "JS, React"
-                -> be "Получение/изменение контента курсов" "HTTPS"
+
+            userDatabase = container "User Database" {
+                technology "PostgreSQL"
+                description "База данных для хранения информации о пользователях."
             }
+
+            incomeDatabase = container "Income Database" {
+                technology "MongoDB"
+                description "База данных для хранения информации о доходах."
+            }
+
+            expenseDatabase = container "Expense Database" {
+                technology "MongoDB"
+                description "База данных для хранения информации о расходах."
+            }
+
+            user -> budgetSystem "Хочет управалять своими финансами"
+
+            // Взаимодействие
+            user -> userService "Запрашивает создание пользователя" "REST"
+            userService -> userDatabase "Сохраняет информацию о пользователе" "JDBC"
+            
+            user -> incomeService "Запрашивает создание планируемого дохода" "REST"
+            incomeService -> incomeDatabase "Сохраняет информацию о доходах" "MongoDB"
+            
+            user -> expenseService "Запрашивает создание планируемого расхода" "REST"
+            expenseService -> expenseDatabase "Сохраняет информацию о расходах" "MongoDB"
+            
+            userService -> incomeService "Запрашивает перечень планируемых доходов" "REST"
+            incomeService -> incomeDatabase "Получает перечень доходов" "MongoDB"
+            
+            userService -> expenseService "Запрашивает перечень планируемых расходов" "REST"
+            expenseService -> expenseDatabase "Получает перечень расходов" "MongoDB"
+            
+            user -> budgetCalculationService "Запрашивает расчет динамики бюджета" "REST"
+            budgetCalculationService -> incomeDatabase "Читает данные для расчета" "MongoDB"
+            budgetCalculationService -> expenseDatabase "Читает данные для расчета" "MongoDB"
         }
-
-        u1 -> s2.fe "Скачать материалы/задания и закачать результаты практики"
-        u2 -> s2.fe "Загрузить материалы/задания и оценить результаты практики"
-
-
-        u1 -> s2 "Получает задание, смотрит материалы, отправляет лр"
-        u2 -> s2 "Создает контент курса, проверяет задания студентов"
-        u1 -> s1 "слушает лекцию" {
-            tags "video"
-        }
-
-        u2 -> s1 "читает лекцию" {
-            tags "video"
-        }
-
-
-        deploymentEnvironment "Production" {
-
-            deploymentNode "DMZ" {
-                deploymentNode "NGinx Server" {
-                    containerInstance s2.fe
-                    instances 2
-                }
-            }
-
-            deploymentNode "Inside" {
-
-                in_db = infrastructureNode "Backup Database Server" 
-                dn_db = deploymentNode "Database Server" {
-                 containerInstance s2.db
-                 -> in_db "Backup"
-                }
-
-                deploymentNode "k8s pod backend" {
-                 containerInstance s2.be
-                 instances 3
-                }
-
-                deploymentNode "k8s pod subject" {
-                    containerInstance s2.subject
-                }
-
-                deploymentNode "k8s pod content" {
-                    containerInstance s2.content
-                }
-
-            }
-
-        }
-        
     }
 
     views {
-
-        dynamic s2 "uc01" "получение задания лабораторной работы" {
-            autoLayout lr
-
-            u1 -> s2.fe "Открыть страницу курса"
-            s2.fe -> s2.be "GET /subject/{id}"
-            s2.be -> s2.subject "GET /subject/{id}"
-            s2.subject -> s2.db "SELECT * FROM subject WHERE id={id}"
-
-            u1 -> s2.fe "Загрузить ЛР"
-            s2.fe -> s2.be "GET /content/{id}"
-            s2.be -> s2.content "GET /content/{id}"
-            s2.content -> s2.db "SELECT * FROM content WHERE id={id}"
-        }
-
-        dynamic s2 "uc02" "загрузить решение лабораторной работы" {
-            autoLayout lr
-
-            u1 -> s2.fe "Открыть страницу курса"
-            s2.fe -> s2.be "GET /subject/{id}"
-            s2.be -> s2.subject "GET /subject/{id}"
-            s2.subject -> s2.db "SELECT * FROM subject WHERE id={id}"
-
-            u1 -> s2.fe "Загрузить решение ЛР"
-            s2.fe -> s2.be "POST /content/{id}"
-            s2.be -> s2.content "POST /content/{id}"
-            s2.content -> s2.db "INSERT INTO  content (...) VALUES (...)"
-        }
-
         themes default
-        systemContext s2 {
+
+        // Диаграмма System Context
+        systemContext budgetSystem {
             include *
-            exclude relationship.tag==video
-            autoLayout
+            autolayout lr
         }
 
-        container s2 "vertical" {
+        // Диаграмма Container
+        container budgetSystem {
             include *
-            autoLayout
+            autolayout lr
         }
 
-        container s2 "hotizontal" {
-            include *
+        // Диаграмма Dynamic (Создание нового пользователя)
+        dynamic budgetSystem "create_new_user" "Создание нового пользователя" {
             autoLayout lr
+            user -> budgetSystem.userService "Отправляет запрос на создание нового пользователя"
+            budgetSystem.userService -> budgetSystem.userDatabase "Сохраняет данные"
+            budgetSystem.userService -> user "Отправляет ответ о регистрации"
         }
 
-        component s2.be {
-            include *
+        // Диаграмма Dynamic (Создание дохода)
+        dynamic budgetSystem "create_income" "Создание планируемого дохода" {
             autoLayout lr
+            user -> budgetSystem.incomeService "Отправляет запрос на создание дохода"
+            budgetSystem.incomeService -> budgetSystem.incomeDatabase "Сохраняет информацию о доходе"
+            budgetSystem.incomeService -> user "Отправляет подтверждение"
         }
 
-        deployment * "Production" {
-            include *
-            autoLayout
-
+        // Диаграмма Dynamic (Создание расхода)
+        dynamic budgetSystem "create_expense" "Создание планируемого расхода" {
+            autoLayout lr
+            user -> budgetSystem.expenseService "Отправляет запрос на создание расхода"
+            budgetSystem.expenseService -> budgetSystem.expenseDatabase "Сохраняет информацию о расходе"
+            budgetSystem.expenseService -> user "Отправляет подтверждение"
         }
 
+        // Диаграмма Dynamic (Поиск пользователя по логину)
+        dynamic budgetSystem "search_user_by_login" "Поиск пользователя по логину" {
+            autoLayout lr
+            user -> budgetSystem.userService "Запрашивает поиск по логину"
+            budgetSystem.userService -> budgetSystem.userDatabase "Получает данные пользователя"
+            budgetSystem.userService -> user "Отправляет данные"
+        }
 
+        // Диаграмма Dynamic (Поиск пользователя по имени и фамилии)
+        dynamic budgetSystem "search_user_by_name" "Поиск пользователя по имени и фамилии" {
+            autoLayout lr
+            user -> budgetSystem.userService "Запрашивает поиск по имени и фамилии"
+            budgetSystem.userService -> budgetSystem.userDatabase "Получает данные пользователя"
+            budgetSystem.userService -> user "Отправляет данные"
+        }
+
+        // Диаграмма Dynamic (Получение перечня доходов)
+        dynamic budgetSystem "get_expenses" "Получение перечня планируемых расходов" {
+            autoLayout lr
+            user -> budgetSystem.expenseService "Запрашивает перечень расходов"
+            budgetSystem.expenseService -> budgetSystem.expenseDatabase "Получает перечень расходов"
+            budgetSystem.expenseService -> user "Отправляет данные"
+        }
+
+        // Диаграмма Dynamic (Расчет динамики бюджета)
+        dynamic budgetSystem "calculate_budget" "Расчет динамики бюджета" {
+            autoLayout lr
+            user -> budgetSystem.budgetCalculationService "Запрашивает расчет динамики бюджета"
+            budgetSystem.budgetCalculationService -> budgetSystem.incomeDatabase "Читает данные для расчета"
+            budgetSystem.budgetCalculationService -> budgetSystem.expenseDatabase "Читает данные для расчета"
+            budgetSystem.budgetCalculationService -> user "Отправляет расчет"
+        }
     }
 }
