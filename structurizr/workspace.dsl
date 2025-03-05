@@ -62,8 +62,8 @@ workspace {
             expenseService -> expenseDatabase "Получает перечень расходов" "MongoDB"
             
             user -> budgetCalculationService "Запрашивает расчет динамики бюджета" "REST"
-            budgetCalculationService -> incomeDatabase "Читает данные для расчета" "MongoDB"
-            budgetCalculationService -> expenseDatabase "Читает данные для расчета" "MongoDB"
+            budgetCalculationService -> incomeService "Читает данные для расчета" "MongoDB"
+            budgetCalculationService -> expenseService "Читает данные для расчета" "MongoDB"
         }
     }
 
@@ -134,8 +134,10 @@ workspace {
         dynamic budgetSystem "calculate_budget" "Расчет динамики бюджета" {
             autoLayout lr
             user -> budgetSystem.budgetCalculationService "Запрашивает расчет динамики бюджета"
-            budgetSystem.budgetCalculationService -> budgetSystem.incomeDatabase "Читает данные для расчета"
-            budgetSystem.budgetCalculationService -> budgetSystem.expenseDatabase "Читает данные для расчета"
+            budgetSystem.budgetCalculationService -> budgetSystem.incomeService "Запрашивает данные для расчета"
+            budgetSystem.incomeService -> budgetSystem.incomeDatabase "Читает данные для расчета"
+            budgetSystem.budgetCalculationService -> budgetSystem.expenseService "Запрашивает данные для расчета"
+             budgetSystem.expenseService -> budgetSystem.expenseDatabase "Читает данные для расчета"
             budgetSystem.budgetCalculationService -> user "Отправляет расчет"
         }
     }
