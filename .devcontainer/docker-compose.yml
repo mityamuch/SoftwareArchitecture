@@ -1,4 +1,3 @@
-version: '3.3'
 
 services:
 
@@ -11,6 +10,7 @@ services:
         - ../structurizr:/usr/local/structurizr
     networks:
       - my_network
+  
   app:
     build:
       context: ..
@@ -155,6 +155,26 @@ services:
         KAFKA_CLUSTERS_0_NAME: "kraft"
       networks:
         - my_network
+
+  user-service:
+    build:
+      context: ../budgeting-system/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    networks:
+      - my_network
+    ports:
+      - "8002:8002"
+
+  income-service:
+    build:
+      context: ../budgeting-system/income-service
+      dockerfile: Dockerfile
+    container_name: income-service
+    networks:
+      - my_network
+    ports:
+      - "8003:8003"
 
 networks:
   my_network:
