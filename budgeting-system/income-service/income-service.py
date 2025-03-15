@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import date
 
 app = FastAPI()
@@ -10,12 +10,14 @@ class Income(BaseModel):
     user_id: int
     amount: float
     description: str
+    date: date
 
 class Expense(BaseModel):
     id: int
     user_id: int
     amount: float
     description: str
+    date: date
 
 incomes_db = {}
 expenses_db = {}
@@ -42,9 +44,13 @@ async def get_expenses():
 
 @app.get("/budget-dynamics/")
 async def calculate_budget_dynamics(start_date: date, end_date: date):
-    total_income = sum(income.amount for income in incomes_db.values())
-    total_expense = sum(expense.amount for expense in expenses_db.values())
+    filtered_incomes = [income for income in incomes_db.values() if start_date <= income.date <= end_date]
+    filtered_expenses = [expense for expense in expenses_db.values() if start_date <= expense.date <= end_date]
+
+    total_income = sum(income.amount for income in filtered_incomes)
+    total_expense = sum(expense.amount for expense in filtered_expenses)
     budget_dynamics = total_income - total_expense
+
     return {
         "total_income": total_income,
         "total_expense": total_expense,

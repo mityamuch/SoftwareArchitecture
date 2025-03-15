@@ -59,7 +59,7 @@ paths:
         '401':
           description: Неверные учетные данные
 
-  # пользователи
+  # Пользователи
   /users:
     get:
       tags:
@@ -164,7 +164,7 @@ paths:
         '404':
           description: Пользователь не найден
 
-  # доходы
+  # Доходы
   /incomes/:
     post:
       tags:
@@ -199,7 +199,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Income'
 
-  # расходы
+  # Расходы
   /expenses/:
     post:
       tags:
@@ -234,7 +234,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Expense'
 
-  # расчет динамики бюджета
+  # Расчет динамики бюджета
   /budget-dynamics/:
     get:
       tags:
@@ -311,6 +311,10 @@ components:
         description:
           type: string
           example: Salary
+        date:
+          type: string
+          format: date
+          example: 2023-01-15
     Expense:
       type: object
       properties:
@@ -326,6 +330,10 @@ components:
         description:
           type: string
           example: Rent
+        date:
+          type: string
+          format: date
+          example: 2023-01-20
   securitySchemes:
     BearerAuth:
       type: http
