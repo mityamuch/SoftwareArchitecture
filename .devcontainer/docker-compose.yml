@@ -158,9 +158,9 @@ services:
 
   user-service:
     build:
-      context: ../budgeting-system/user-service
+      context: ../budgeting-system/user_service
       dockerfile: Dockerfile
-    container_name: user-service
+    container_name: user_service
     networks:
       - my_network
     ports:
@@ -168,9 +168,9 @@ services:
 
   income-service:
     build:
-      context: ../budgeting-system/income-service
+      context: ../budgeting-system/income_service
       dockerfile: Dockerfile
-    container_name: income-service
+    container_name: income_service
     networks:
       - my_network
     ports:
