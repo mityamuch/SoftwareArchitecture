@@ -5,6 +5,9 @@ from domain.income import Income
 from domain.expense import Expense
 from Infrastructure.repositories.income_repository import IncomeRepository
 from Infrastructure.repositories.expense_repository import ExpenseRepository
+from security.auth import get_current_client
+
+
 
 router = APIRouter()
 income_repository = IncomeRepository()
@@ -13,28 +16,31 @@ expense_repository = ExpenseRepository()
 @router.post("/incomes/", response_model=Income)
 async def create_income(
     income: Income,
+    current_user: str = Depends(get_current_client)
 ):
     return income_repository.create(income)
 
 @router.get("/incomes/", response_model=List[Income])
-async def get_incomes():
+async def get_incomes(current_user: str = Depends(get_current_client)):
     return income_repository.get_all()
 
 @router.post("/expenses/", response_model=Expense)
 async def create_expense(
     expense: Expense,
+    current_user: str = Depends(get_current_client)
 ):
     return expense_repository.create(expense)
 
 @router.get("/expenses/", response_model=List[Expense])
-async def get_expenses():
+async def get_expenses(current_user: str = Depends(get_current_client)):
     return expense_repository.get_all()
 
 @router.get("/budget-dynamics/")
 async def calculate_budget_dynamics(
     start_date: date,
     end_date: date,
-    user_id: int
+    user_id: int,
+    current_user: str = Depends(get_current_client)
 ):
     incomes = income_repository.get_all()
     expenses = expense_repository.get_all()

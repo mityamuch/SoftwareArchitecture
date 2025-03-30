@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from domain.models.user import User
 from infrastructure.repositories.user_repository import UserRepository
-from infrastructure.security.auth import get_current_client, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, check_user
+from security.auth import get_current_client, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, check_user
+
+
 
 router = APIRouter()
 user_repository = UserRepository()

@@ -3,3 +3,5 @@ structurizr/images/*
 structurizr/workspace.json
 *__pycache__*
 desktop.ini
+.venv
+.vscode
