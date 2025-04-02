@@ -1,7 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from domain.models.user import User
-from infrastructure.database import DBUser, SessionLocal
+from infrastructure.database_init import DBUser, SessionLocal
 from infrastructure.security.auth import hash_password 
 
 class UserRepository:

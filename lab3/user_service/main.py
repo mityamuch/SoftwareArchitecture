@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from sqlalchemy import text
-from infrastructure.database import init_db, SessionLocal
+from infrastructure.database_init import init_db, SessionLocal
 from api.endpoints.user_endpoints import router as user_router
 import os
 
