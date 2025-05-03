@@ -35,6 +35,8 @@ services:
       - POSTGRES_USER=stud
       - POSTGRES_PASSWORD=stud
       - POSTGRES_DB=archdb
+    networks:
+      - my_network
     ports:
       - "5432:5432"
     volumes:
@@ -45,15 +47,17 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:latest
-    container_name: redis
+  cache:
+    container_name: cache
+    image: redis:6.2-alpine
+    restart: always
     ports:
-      - "6379:6379"
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning 
     networks:
       - my_network
+
   user-service:
-    tty: true
     build:
       context: budgeting-system
       dockerfile: user_service/Dockerfile
@@ -65,8 +69,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
+      cache:
         condition: service_started
+    networks:
+      - my_network
     
 
 networks:

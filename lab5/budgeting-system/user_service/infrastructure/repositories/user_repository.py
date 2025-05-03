@@ -11,13 +11,8 @@ import os
 class UserRepository:
     def __init__(self):
         self.db: Session = SessionLocal()
-        self.redis_client =  self.redis_client = redis.Redis(
-            host="redis",
-            port=6379,
-            decode_responses=True,
-            socket_connect_timeout=3,
-            socket_timeout=3
-        )
+        self.redis_client = redis.from_url("redis://cache:6379/0", decode_responses=True)
+        self.redis_client.ping()
         self.user_cache_prefix = "user:"
         self.all_users_key = "all_users"
 
